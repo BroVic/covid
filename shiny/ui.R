@@ -1,10 +1,8 @@
 library(shiny)
-library(here)
 source('globals.R')
 
-data <- readData('.', prefix)$data
+data <- readCovidObj(dirs$.cache, prefix)$data
 countries <- unique(data$countriesAndTerritories)
-
 
 shinyUI(
   fluidPage(

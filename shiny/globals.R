@@ -1,15 +1,12 @@
 # globals.R
 # -----------------------------
-
-library(dplyr)
-library(ggplot2)
-library(curl)
-library(httr)
-
+# 
+# NB: Some of the functions defined here are not called
 
 ## Important vectors
 # -----------------------------
-nm <- c(".cache", "fig")
+nm <- c(".cache", "www", "fig")
+dirs <- structure(as.list(nm), names = nm)
 today <- Sys.Date()
 prefix <- "covid_data_"
 
@@ -46,8 +43,33 @@ attach_packages <- function() {
 
 
 
+# Current data are collected and if not available, downloaded from source.
+# If unable to access source, old data on disk are used. If all fails,
+# execution is stopped entirely.
+decide_and_execute_data_sourcing <- function(dir, pref, day) {
+    fetch <- TRUE
+    if (dataOnDisk(dir, pref)) {
+      obj <- readCovidObj(dir, pref)
+      if (obj$meta$created == day)
+        fetch <- FALSE
+    }
+    
+    if (fetch)
+      obj <- get_eu_data(dir, pref)
+    obj
+}
+
+
+
+
+
+
+
+
+
+
 # Reads previously stored data, selecting the most recent
-readData <- function(dir, prefix) {
+readCovidObj <- function(dir, prefix) {
   files <- find_files(dir, prefix)
   files <- sort(files, decreasing = TRUE)
   readRDS(files[1])
@@ -76,6 +98,7 @@ find_files <- function(dir, prefix) {
 # Transforms the data a bit to ease dealing with dates and 
 # focuses on the chosen country or countries
 transformData <- function(data, country) {
+ suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
   stopifnot(is.character(country))
   suppressWarnings({
     data %>%
@@ -107,39 +130,9 @@ dataOnDisk <- function(dir, prefix) {
 
 
 
-# Gets an appropriate placeholder value for the main title
-countryTitle <- function(c) {
-  stopifnot(is.character(c))
-  num <- length(c)
-  if (num > 1)
-    return(paste(num, "countries"))
-  chartr("_", " ", c)
-}
-
-
-
-
-
-
-
-## Invalidates cache - TODO: implement
-invalidateCache <- function(dir, new) {
-  if (!dataOnDisk())
-    return(FALSE)
-  fs <- list.files(dir, '.\\.rds$', full.names = TRUE)
-  old <- readData()
-  if (old$meta$created >= new$meta$created)
-    return(FALSE)
-  file.remove(fs)
-  TRUE
-}
-
-
-
-
-
- 
 get_eu_data <- function(dir, prefix) {
+  require(httr, quietly = TRUE)
+  suppressPackageStartupMessages(require(curl, quietly = TRUE))
   tryCatch({
     if (interactive() && !has_internet()) {
       response <- NULL
@@ -167,13 +160,51 @@ get_eu_data <- function(dir, prefix) {
     msg <-
       paste0(msg, "Using data on disk (if available)", collapse = '\n')
     message(msg)
-    if (!dataOnDisk())
+    if (!dataOnDisk(dir, prefix))
       stop("No data were found on disk", call. = FALSE)
-    covdata <<- readData()
-    dt <<- covdata$data
   })
+  readCovidObj(dir, prefix)
 }
 
+
+
+
+
+
+
+
+# Gets an appropriate placeholder value for the main title
+countryTitle <- function(c) {
+  stopifnot(is.character(c))
+  num <- length(c)
+  if (num > 1)
+    return(paste(num, "countries"))
+  chartr("_", " ", c)
+}
+
+
+
+
+
+
+
+## Invalidates cache - TODO: implement
+invalidateCache <- function(dir, new) {
+  if (!dataOnDisk())
+    return(FALSE)
+  fs <- list.files(dir, '.\\.rds$', full.names = TRUE)
+  old <- readCovidObj()
+  if (old$meta$created >= new$meta$created)
+    return(FALSE)
+  file.remove(fs)
+  TRUE
+}
+
+
+
+
+
+ 
 
 
 
@@ -200,6 +231,7 @@ save_eu_covid_rds <- function(dir, data, prefix, url) {
 
 
 underscore_compd_names <- function(str) {
+  require(magrittr, quietly = TRUE)
   str %>%
     {
       if (grepl('\\,', .)) {
@@ -234,6 +266,8 @@ underscore_compd_names <- function(str) {
 
 
 create_ggplot <- function(covdata, loc) {
+  require(magrittr, quietly = TRUE)
+  require(ggplot2, quietly = TRUE)
   theme_set(theme_minimal())
   df <- covdata$data
   df <- transformData(df, loc)
@@ -242,29 +276,26 @@ create_ggplot <- function(covdata, loc) {
   latest <- with(df, max(date))
   subtitle <- paste("Updated", format(latest, "%A, %d %B %Y"))
   caption <- covdata$meta$source %>%
-    parse_url() %>%
+    httr::parse_url() %>%
     `[[`("hostname") %>%
     paste("Source:", .)
   
-  gg <- ggplot(df, aes(x = date))
-  # if (length(loc) == 1L) {
-  #   gg <- gg  +
-  #     geom_point(col = "blue", size = 2)
-  # }
-  size <- 1
-  gg +
-    geom_line(aes(y = cases, color = 'cases'), size = size) +
-    geom_line(aes(y = deaths, color = 'deaths'), size = size) +
+  szline <- 1
+  center <- 0.5
+  bold <- "bold"
+  
+  ggplot(df, aes(x = date)) +
+    geom_line(aes(y = cases, color = 'cases'), size = szline) +
+    geom_line(aes(y = deaths, color = 'deaths'), size = szline) +
     scale_color_brewer("Variable", labels = c('cases', 'deaths'), palette = "Set1") +
     labs(title = title,
          subtitle = subtitle,
          caption = caption) +
-    xlab("Date") +
     ylab("No. of Cases/Deaths") +
     theme(
-      plot.title = element_text(hjust = 0.5),
-      plot.subtitle = element_text(hjust = 0.5),
-      axis.text.x = element_text(face = "bold"),
-      legend.title = element_text(face = 'bold')
+      plot.title = element_text(hjust = center),
+      plot.subtitle = element_text(hjust = center),
+      axis.text.x = element_text(face = bold),
+      legend.title = element_text(face = bold)
     )
 }
