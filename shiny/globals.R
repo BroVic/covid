@@ -3,6 +3,8 @@
 # 
 # NB: Some of the functions defined here are not called
 
+library(tools)
+
 ## Important vectors
 # -----------------------------
 nm <- c(".cache", "www", "fig")
@@ -10,7 +12,12 @@ dirs <- structure(as.list(nm), names = nm)
 today <- Sys.Date()
 prefix <- "covid_data_"
 
-
+# Inputs
+cntryInputId <- 'country'
+varInputId <- 'variable'
+cntryInputLabel <- toTitleCase(cntryInputId)
+varInputLabel <- toTitleCase(varInputId)
+# selectorLabel <- sprintf("%s (one or more):", cntryInputLabel)
 
 
 ## Functions
@@ -85,30 +92,6 @@ readCovidObj <- function(dir, prefix) {
 find_files <- function(dir, prefix) {
   rgx <- paste0("^", prefix, '.+\\.rds$')
   list.files(dir, rgx, full.names = TRUE)
-}
-
-
-
-
-
-
-
-
-
-# Transforms the data a bit to ease dealing with dates and 
-# focuses on the chosen country or countries
-transformData <- function(data, country) {
- suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
-  stopifnot(is.character(country))
-  suppressWarnings({
-    data %>%
-      filter(countriesAndTerritories == country) %>% 
-      mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
-      arrange(date) %>% 
-      mutate(cum.cases = cumsum(cases)) %>% 
-      mutate(cum.deaths = cumsum(deaths)) %>% 
-      rename(Country = countriesAndTerritories)
-  })
 }
 
 
@@ -265,12 +248,14 @@ underscore_compd_names <- function(str) {
 
 
 
-create_ggplot <- function(covdata, loc) {
+create_ggplot <- function(covdata, loc, var) {
   require(magrittr, quietly = TRUE)
   require(ggplot2, quietly = TRUE)
+  if (is.null(var))
+    return()
   theme_set(theme_minimal())
-  df <- covdata$data
-  df <- transformData(df, loc)
+  df <- covdata$data %>% 
+    transformData(loc)
   title <-
     paste("COVID-19 Trend for", countryTitle(loc))
   latest <- with(df, max(date))
@@ -280,22 +265,77 @@ create_ggplot <- function(covdata, loc) {
     `[[`("hostname") %>%
     paste("Source:", .)
   
-  szline <- 1
+  szline <- 1.1
   center <- 0.5
   bold <- "bold"
+  # browser()
   
-  ggplot(df, aes(x = date)) +
-    geom_line(aes(y = cases, color = 'cases'), size = szline) +
-    geom_line(aes(y = deaths, color = 'deaths'), size = szline) +
-    scale_color_brewer("Variable", labels = c('cases', 'deaths'), palette = "Set1") +
+  
+  gg <- ggplot(df, aes(x = date))
+
+  if (length(var) == 2L) {
+    gg <- gg +
+      geom_line(aes(y = cases, color = var[[1]]), size = szline) +
+      geom_line(aes(y = deaths, color = var[[2]]), size = szline) +
+      scale_color_brewer(labels = var, palette = 'Set1')
+  }
+  else {
+    gg <- gg +
+      geom_line(aes_string(y = var, color = 'Country'), size = szline) +
+      scale_color_brewer(cntryInputLabel, palette = 'Set1')
+  }
+ 
+  gg +
     labs(title = title,
          subtitle = subtitle,
          caption = caption) +
-    ylab("No. of Cases/Deaths") +
+    ylab(sprintf("No. of %s", paste0(toTitleCase(var), collapse = "/"))) +
     theme(
-      plot.title = element_text(hjust = center),
+      plot.title = element_text(hjust = center, face = bold),
       plot.subtitle = element_text(hjust = center),
       axis.text.x = element_text(face = bold),
-      legend.title = element_text(face = bold)
+      axis.title.x = element_blank(),
+      axis.title.y = element_text(face = bold),
+      legend.title = element_blank()
     )
+}
+
+
+
+
+
+
+
+
+
+# Transforms the data a bit to ease dealing with dates and 
+# focuses on the chosen country or countries
+transformData <- function(data, country) {
+  suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
+  stopifnot(is.character(country))
+  suppressWarnings({
+    data %>%
+      filter(countriesAndTerritories == country) %>% 
+      mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
+      arrange(date) %>% 
+      mutate(cum.cases = cumsum(cases)) %>% 
+      mutate(cum.deaths = cumsum(deaths)) %>% 
+      rename(Country = countriesAndTerritories)
+  })
+}
+
+
+
+
+
+
+
+
+
+
+# Provides the names to be used for selecting input
+get_country_names <- function(obj) {
+  stopifnot(inherits(obj, "COVIDdata"))
+  data <- obj$data
+  unique(data$countriesAndTerritories)
 }
