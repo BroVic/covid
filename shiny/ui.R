@@ -1,11 +1,11 @@
-lapply(c("shiny", "shinythemes"), library, character.only = TRUE)
+library(shiny)
 source('globals.R')
 
 local({
   obj <- readCovidObj(dirs$.cache, prefix)
   countries <- get_country_names(obj)
-  startCntry <- "Nigeria"
-  
+  names(countries) <- chartr('_', " ", countries)
+    
   nn <- colnames(obj$data)
   vars <- structure(as.list(nn), names = nn)
   cases <- vars$cases
@@ -21,11 +21,7 @@ local({
   
   
   shinyUI(fluidPage(
-<<<<<<< HEAD
-=======
-    theme = "Flatly",
->>>>>>> origin/master
-    
+
     mainPanel(plotOutput("myplot"), width = wd$full),
     
     fluidRow(
@@ -33,40 +29,28 @@ local({
              inputPanel(
                selectInput(cntryInputId,
                            cntryInputLabel,
-                           countries,
-                           startCntry,
-                           TRUE),
+                           choices = countries,
+                           selected = "Nigeria",
+                           multiple = TRUE),
                
-<<<<<<< HEAD
                em("Select one or more.")
-=======
-               "Select one or more."
->>>>>>> origin/master
              )),
       
       column(width = wd$mid,
              inputPanel(
-               checkboxGroupInput(
+               radioButtons(
                  varInputId,
                  varInputLabel,
-                 c("Cases" = cases,
-                   "Deaths" = deaths),
-                 selected = c(cases, deaths),
-                 inline = TRUE
-<<<<<<< HEAD
+                 c("Cases only" = cases,
+                   "Deaths only" = deaths,
+                   "Cases & Deaths" = 'both'),
+                 selected = 'both'
                ),
+               
                em(textOutput("message"))
              )),
       
       column(width = wd$right)
-=======
-               )
-             )),
-      
-      column(width = wd$right,
-             
-             textOutput("message"))
->>>>>>> origin/master
     )
     
   ))

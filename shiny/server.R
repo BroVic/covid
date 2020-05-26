@@ -5,9 +5,9 @@ shinyServer(function(input, output, session) {
   covid <- decide_and_execute_data_sourcing(dirs$.cache, prefix, today)
 
   observe({
-    numVars <- length(input$variable)
+    varChc <- input$variable
     numCntry <- length(input$country)
-    if (numVars == 2 && numCntry > 1) {
+    if (varChc == 'both' && numCntry > 1) {
       
       updateSelectInput(
         session,
@@ -20,7 +20,7 @@ shinyServer(function(input, output, session) {
       output$message <- renderText(paste("To display more than one country,",
                                          "select only 1 of the variables."))
     }
-    else if (numVars < 2)
+    else if (varChc != 'both')
       output$message <- renderText("")
   })
 

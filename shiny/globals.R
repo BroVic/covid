@@ -253,8 +253,6 @@ underscore_compd_names <- function(str) {
 create_ggplot <- function(covdata, loc, var) {
   require(magrittr, quietly = TRUE)
   require(ggplot2, quietly = TRUE)
-  if (is.null(var))
-    return()
   theme_set(theme_minimal())
   df <- covdata$data %>% 
     transformData(loc)
@@ -274,12 +272,13 @@ create_ggplot <- function(covdata, loc, var) {
   
   
   gg <- ggplot(df, aes(x = date))
-
-  if (length(var) == 2L) {
+  
+  if (var == 'both') {
+    opts <- c('cases', 'deaths')
     gg <- gg +
-      geom_line(aes(y = cases, color = var[[1]]), size = szline) +
-      geom_line(aes(y = deaths, color = var[[2]]), size = szline) +
-      scale_color_brewer(labels = var, palette = 'Set1')
+      geom_line(aes(y = cases, color = opts[[1]]), size = szline) +
+      geom_line(aes(y = deaths, color = opts[[2]]), size = szline) +
+      scale_color_brewer(labels = opts, palette = 'Set1')
   }
   else {
     gg <- gg +
@@ -295,11 +294,7 @@ create_ggplot <- function(covdata, loc, var) {
     theme(
       plot.title = element_text(hjust = center, face = bold),
       plot.subtitle = element_text(hjust = center),
-<<<<<<< HEAD
       axis.text = element_text(face = bold, size = 12),
-=======
-      axis.text.x = element_text(face = bold),
->>>>>>> origin/master
       axis.title.x = element_blank(),
       axis.title.y = element_text(face = bold),
       legend.title = element_blank()
