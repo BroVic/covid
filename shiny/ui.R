@@ -1,4 +1,4 @@
-library(shiny)
+lapply(c("shiny", "shinythemes"), library, character.only = TRUE)
 source('globals.R')
 
 local({
@@ -21,6 +21,10 @@ local({
   
   
   shinyUI(fluidPage(
+<<<<<<< HEAD
+=======
+    theme = "Flatly",
+>>>>>>> origin/master
     
     mainPanel(plotOutput("myplot"), width = wd$full),
     
@@ -33,7 +37,11 @@ local({
                            startCntry,
                            TRUE),
                
+<<<<<<< HEAD
                em("Select one or more.")
+=======
+               "Select one or more."
+>>>>>>> origin/master
              )),
       
       column(width = wd$mid,
@@ -45,11 +53,20 @@ local({
                    "Deaths" = deaths),
                  selected = c(cases, deaths),
                  inline = TRUE
+<<<<<<< HEAD
                ),
                em(textOutput("message"))
              )),
       
       column(width = wd$right)
+=======
+               )
+             )),
+      
+      column(width = wd$right,
+             
+             textOutput("message"))
+>>>>>>> origin/master
     )
     
   ))

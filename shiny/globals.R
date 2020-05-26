@@ -295,7 +295,11 @@ create_ggplot <- function(covdata, loc, var) {
     theme(
       plot.title = element_text(hjust = center, face = bold),
       plot.subtitle = element_text(hjust = center),
+<<<<<<< HEAD
       axis.text = element_text(face = bold, size = 12),
+=======
+      axis.text.x = element_text(face = bold),
+>>>>>>> origin/master
       axis.title.x = element_blank(),
       axis.title.y = element_text(face = bold),
       legend.title = element_blank()
