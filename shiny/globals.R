@@ -180,7 +180,7 @@ clearCache <- function(dir, new, pref) {
   old <- readCovidObj(dir, pref)
   if (old$meta$created >= new$meta$created)
     return(FALSE)
-  file.remove(fs)
+  any(file.remove(fs))
 }
 
 
@@ -340,5 +340,7 @@ transformData <- function(data, country) {
 get_country_names <- function(obj) {
   stopifnot(inherits(obj, "COVIDdata"))
   data <- obj$data
-  unique(data$countriesAndTerritories)
+  cntry.names <- unique(data$countriesAndTerritories)
+  names(cntry.names) <- chartr('_', " ", cntry.names)
+  cntry.names
 }

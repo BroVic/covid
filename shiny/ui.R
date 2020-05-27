@@ -4,7 +4,6 @@ source('globals.R')
 local({
   obj <- readCovidObj(dirs$.cache, prefix)
   countries <- get_country_names(obj)
-  names(countries) <- chartr('_', " ", countries)
     
   nn <- colnames(obj$data)
   vars <- structure(as.list(nn), names = nn)

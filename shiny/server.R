@@ -3,13 +3,13 @@ source('globals.R')
 
 shinyServer(function(input, output, session) {
   covid <- decide_and_execute_data_sourcing(dirs$.cache, prefix, today)
-
+  msg <- ""
+  
   observe({
     varChc <- input$variable
     numCntry <- length(input$country)
-    msg <- ""
     if (varChc == 'both') {
-      ind <- if (numCntry == 2L) 2L else 1L
+      ind <- if (numCntry >= 2L) 2L else 1L
       updateSelectInput(
         session,
         cntryInputId,
@@ -17,10 +17,10 @@ shinyServer(function(input, output, session) {
         choices = get_country_names(covid),
         selected = input$country[[ind]]
       )
-      msg <- paste("To display more than one country,",
-                   "select only 1 of the variables.")
+      msg <- paste("To chart more than one country,",
+                   "select 'Cases only' or 'Deaths only'.")
+      output$message <- renderText(msg)
     }
-    output$message <- renderText(msg)
   })
 
   output$myplot <-
@@ -32,4 +32,6 @@ shinyServer(function(input, output, session) {
       else
         create_ggplot(covid, input$country, input$variable)
     })
+  
+  output$message <- renderText(msg)
 })
