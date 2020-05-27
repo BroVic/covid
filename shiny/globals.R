@@ -256,6 +256,8 @@ create_ggplot <- function(covdata, loc, var) {
   theme_set(theme_minimal())
   df <- covdata$data %>% 
     transformData(loc)
+  if (is.null(df))
+    return()
   title <-
     paste("COVID-19 Trend for", countryTitle(loc))
   latest <- with(df, max(date))
@@ -315,7 +317,8 @@ create_ggplot <- function(covdata, loc, var) {
 # focuses on the chosen country or countries
 transformData <- function(data, country) {
   suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
-  stopifnot(is.character(country))
+  if (!is.character(country))
+    return()
   suppressWarnings({
     data %>%
       filter(countriesAndTerritories == country) %>% 
