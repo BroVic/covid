@@ -273,14 +273,15 @@ create_ggplot <- function(covdata, loc, var) {
   
   gg <- ggplot(df, aes(x = date))
   
+  opts <- c('cases', 'deaths')
   if (var == 'both') {
-    opts <- c('cases', 'deaths')
     gg <- gg +
       geom_line(aes(y = cases, color = opts[[1]]), size = szline) +
       geom_line(aes(y = deaths, color = opts[[2]]), size = szline) +
       scale_color_brewer(labels = opts, palette = 'Set1')
   }
   else {
+    opts <- var
     gg <- gg +
       geom_line(aes_string(y = var, color = 'Country'), size = szline) +
       scale_color_brewer(cntryInputLabel, palette = 'Set1')
@@ -290,10 +291,11 @@ create_ggplot <- function(covdata, loc, var) {
     labs(title = title,
          subtitle = subtitle,
          caption = caption) +
-    ylab(sprintf("No. of %s", paste0(toTitleCase(var), collapse = "/"))) +
+    ylab(sprintf("No. of %s", paste0(toTitleCase(opts), collapse = "/"))) +
     theme(
       plot.title = element_text(hjust = center, face = bold),
       plot.subtitle = element_text(hjust = center),
+      panel.border = element_rect(colour = 'darkgray', size = szline, fill = NA),
       axis.text = element_text(face = bold, size = 12),
       axis.title.x = element_blank(),
       axis.title.y = element_text(face = bold),
