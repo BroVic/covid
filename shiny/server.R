@@ -18,7 +18,7 @@ shinyServer(function(input, output, session) {
         selected = input$country[[ind]]
       )
       msg <- paste("To chart more than one country,",
-                   "select 'Cases only' or 'Deaths only'.")
+                   "select either 'Cases only' or 'Deaths only'.")
       output$message <- renderText(msg)
     }
   })
