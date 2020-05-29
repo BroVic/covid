@@ -50,7 +50,11 @@ local({
              )),
       
       column(width = wd$right)
-    )
+    ),
+    
+    br(),
+    
+    a("GitHub", href = 'https://github.com/BroVic/covid', target = "_blank")
     
   ))
 })
