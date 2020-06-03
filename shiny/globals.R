@@ -347,3 +347,13 @@ get_country_names <- function(obj) {
   names(cntry.names) <- chartr('_', " ", cntry.names)
   cntry.names
 }
+
+
+
+
+
+
+
+draw_summary_table <- function(covidObj, location, var) {
+  
+}
