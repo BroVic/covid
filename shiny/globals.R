@@ -1,9 +1,8 @@
-# globals.R
+# Source file: globals.R
+# App version: 2
 # -----------------------------
 # 
 # NB: Some of the functions defined here are not called
-
-library(tools)
 
 ## Important vectors
 # -----------------------------
@@ -49,17 +48,49 @@ attach_packages <- function() {
 # Current data are collected and if not available, downloaded from source.
 # If unable to access source, old data on disk are used. If all fails,
 # execution is stopped entirely.
-source_data <- function(dir, pref) {
+source_data <- function(dir, prefix) {
     fetch <- TRUE
-    if (dataOnDisk(dir, pref)) {
-      obj <- readCovidObj(dir, pref)
+    if (dataOnDisk(dir, prefix)) {
+      obj <- readCovidObj(dir)
       if (obj$meta$created == Sys.Date())
         fetch <- FALSE
     }
     
     if (fetch)
-      obj <- get_eu_data(dir, pref)
+      obj <- get_eu_data(dir, prefix)
     obj
+}
+
+
+
+
+
+
+
+
+
+# Transforms the data a bit to ease dealing with dates and 
+# focuses on the chosen country or countries. The following
+# additional columns are created:
+#  - cum.cases: The cumuluative sum of cases
+#  - cum.deaths: The cumulative sum of deaths
+#  - date: The date in the POSIX format i.e. YYYY-MM-DD
+#
+# The following column is renamed:
+#  - countriesAndTerritories => Country
+#
+transformData <- function(data) {
+  stopifnot(is.data.frame(data))
+  suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
+  suppressWarnings({
+    data %>% 
+      rename(Country = countriesAndTerritories) %>% 
+      mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
+      arrange(date) %>% 
+      group_by(Country) %>% 
+      mutate(cum.cases = cumsum(cases)) %>% 
+      mutate(cum.deaths = cumsum(deaths)) 
+  })
 }
 
 
@@ -72,7 +103,7 @@ source_data <- function(dir, pref) {
 
 
 # Reads previously stored data, selecting the most recent
-readCovidObj <- function(dir, prefix) {
+readCovidObj <- function(dir) {
   files <- find_files(dir, prefix)
   files <- sort(files, decreasing = TRUE)
   readRDS(files[1])
@@ -142,7 +173,7 @@ get_eu_data <- function(dir, prefix) {
     if (!dataOnDisk(dir, prefix))
       stop("No data were found on disk", call. = FALSE)
   })
-  readCovidObj(dir, prefix)
+  readCovidObj(dir)
 }
 
 
@@ -173,7 +204,7 @@ clearCache <- function(dir, new, pref) {
   if (!dataOnDisk(dir, pref))
     return(FALSE)
   fs <- list.files(dir, '.\\.rds$', full.names = TRUE)
-  old <- readCovidObj(dir, pref)
+  old <- readCovidObj(dir)
   if (old$meta$created >= new$meta$created)
     return(FALSE)
   any(file.remove(fs))
@@ -282,12 +313,14 @@ create_ggplot <- function(covdata, loc, var, plottype) {
       scale_color_brewer(cntryInputLabel, palette = 'Set1')
   }
   
-  annot <- set_annotations(covdata, loc)
+  annot <- set_annotations(covdata, var, loc)
   gg +
-    labs(title = annot$title,
+    labs(
+      y = annot$ylab,
+      title = annot$title,
          subtitle = annot$subtitle,
-         caption = annot$caption) +
-    ylab(sprintf("No. of %s", paste0(toTitleCase(opts.lab), collapse = "/"))) +
+         caption = annot$caption
+    ) +
     theme(
       plot.title = element_text(hjust = center, face = bold),
       plot.subtitle = element_text(hjust = center),
@@ -320,50 +353,40 @@ select_countrydata <- function(covobj, country) {
 
 
 
-set_annotations <- function(covobj, country) {
-  stopifnot(inherits(covobj, "COVIDdata"), is.character(country))
+
+set_annotations <- function(covobj, variable, country) {
+  stopifnot(inherits(covobj, "COVIDdata"),
+            is.character(country),
+            is.character(variable))
   require(magrittr)
   df <- select_countrydata(covobj, country)
-  title <-
-    paste("COVID-19 Trend for", countryTitle(country))
+  
+  varchoice <- variable %>% 
+    sub("cum\\.", "", .) %>% 
+    toTitleCase %>% 
+    paste0(collapse = "/")
+  
+  title <- varchoice %>% 
+    sprintf("COVID-19 %s for", .) %>% 
+    paste(countryTitle(country))
+  
   latest <- with(df, max(date))
   subtitle <- paste("Updated", format(latest, "%A, %d %B %Y"))
+  
   caption <- covobj$meta$source %>%
     httr::parse_url() %>%
     `[[`("hostname") %>%
     paste("Source:", .)
-  list(title = title, subtitle = subtitle, caption = caption)
+  
+  ylab <-  varchoice %>% sprintf("No. of %s", .)
+  
+  list(
+    title = title,
+    subtitle = subtitle,
+    caption = caption,
+    ylab = ylab
+  )
 }
-
-
-
-
-
-
-
-
-# Transforms the data a bit to ease dealing with dates and 
-# focuses on the chosen country or countries. The following
-# additional columns are created:
-#  - cum.cases: The cumuluative sum of cases
-#  - cum.deaths: The cumulative sum of deaths
-#  - date: The date in the POSIX format i.e. YYYY-MM-DD
-#
-# The following column is renamed:
-#  - countriesAndTerritories => Country
-#
-transformData <- function(data) {
-  suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
-  suppressWarnings({
-    data %>% 
-      mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
-      arrange(date) %>% 
-      mutate(cum.cases = cumsum(cases)) %>% 
-      mutate(cum.deaths = cumsum(deaths)) %>% 
-      rename(Country = countriesAndTerritories)
-  })
-}
-
 
 
 
@@ -374,6 +397,7 @@ transformData <- function(data) {
 
 
 # Provides the names to be used for selecting input
+# returns the named character vector
 get_country_names <- function(obj) {
   stopifnot(inherits(obj, "COVIDdata"))
   cntry.names <- unique(obj$data$Country)

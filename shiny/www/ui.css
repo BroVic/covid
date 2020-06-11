@@ -1,12 +1,14 @@
+/* Source file: globals.R
+ * App version: 2
+ * -----------------------------
+**/
+
 body {
-  background-color:gray;
+  background-color:#006666;
 }
 
-.infobox {
-  font-size: 80%;
-  color:red;
-}
 
-#closing-link {
-  text-align: right;
+a {
+  color:#FFFFFF;
+  font-weight:bold;
 }

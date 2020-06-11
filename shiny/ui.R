@@ -1,9 +1,13 @@
+# Source file: ui.R
+# App version: 2
+# -----------------------------
+
 library(shiny)
 source('globals.R')
 
 local({
   
-  obj <- readCovidObj(dirs$.cache, prefix)
+  obj <- readCovidObj(dirs$.cache)
   obj$data <- transformData(obj$data)
   countries <- get_country_names(obj)
   
@@ -24,7 +28,12 @@ local({
     
     includeCSS("www/ui.css"),
     
-    mainPanel(plotOutput("myplot"), width = wd$full),
+    titlePanel("", windowTitle = "COVID-19 Data Visualizer"),
+    
+    conditionalPanel(
+      sprintf("input.%s != ''", cntryInputId),
+      mainPanel(plotOutput("myplot"), width = wd$full)
+    ),
     
     fluidRow(
       column(width = wd$left,
@@ -32,12 +41,10 @@ local({
                selectInput(
                  cntryInputId,
                  cntryInputLabel,
-                 choices = countries,
-                 selected = "Nigeria",
+                 choices = c("Select one or more." = "", countries),
+                 selected = NULL,
                  multiple = TRUE
-               ),
-               
-               em("Select one or more.")
+               )
              )),
       
       column(width = wd$mid,
@@ -47,9 +54,7 @@ local({
                  varInputLabel,
                  c("Cases" = cases, "Deaths" = deaths),
                  selected = cases
-               ),
-               
-               em(textOutput("message"))
+               )
              )),
       
       column(width = wd$right,
@@ -70,15 +75,11 @@ local({
     
     fluidRow(column(
       width = wd$left,
-      
-      actionLink("openFdbk", "Feedback"),
-      
-      conditionalPanel(
-        "var fdbk = false; if (!input.openFdbk) fdbk = toggleFdbk(fdbk);",
-        div(
-          my_infobox_panel(),
-          class = 'infobox'
-        )
+      span(
+        a("Feedback",
+             href = "https://github.com/BroVic/covid/issues",
+             target = "_blank"),
+        id = "link_github"
       )
     ))
   )

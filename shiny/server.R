@@ -1,3 +1,7 @@
+# Source file: server.R
+# App version: 2
+# -----------------------------
+
 library(shiny)
 library(magrittr)
 source('globals.R')
@@ -18,9 +22,6 @@ shinyServer(function(input, output, session) {
         choices = get_country_names(covid),
         selected = input$country[[ind]]
       )
-      msg <- paste("To chart more than one country,",
-                   "select either 'Cases only' or 'Deaths only'.")
-      output$message <- renderText(msg)
     }
   })
 
