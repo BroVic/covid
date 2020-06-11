@@ -1,5 +1,5 @@
 # Source file: server.R
-# App version: 2
+# App version: 2.0.1
 # -----------------------------
 
 library(shiny)

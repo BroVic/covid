@@ -1,5 +1,5 @@
 # Source file: ui.R
-# App version: 2
+# App version: 2.0.1
 # -----------------------------
 
 library(shiny)
@@ -77,8 +77,8 @@ local({
       width = wd$left,
       span(
         a("Feedback",
-             href = "https://github.com/BroVic/covid/issues",
-             target = "_blank"),
+          href = "https://github.com/BroVic/covid/issues",
+          target = "_blank"),
         id = "link_github"
       )
     ))

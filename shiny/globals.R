@@ -1,8 +1,18 @@
 # Source file: globals.R
-# App version: 2
+# App version: 2.0.1
 # -----------------------------
 # 
 # NB: Some of the functions defined here are not called
+
+library(tools)
+library(magrittr)
+library(ggplot2)
+library(rlang)
+library(dplyr)
+library(httr)
+library(curl)
+library(shiny)
+
 
 ## Important vectors
 # -----------------------------
@@ -81,7 +91,7 @@ source_data <- function(dir, prefix) {
 #
 transformData <- function(data) {
   stopifnot(is.data.frame(data))
-  suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
+  # suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
   suppressWarnings({
     data %>% 
       rename(Country = countriesAndTerritories) %>% 
@@ -141,8 +151,6 @@ dataOnDisk <- function(dir, prefix) {
 
 
 get_eu_data <- function(dir, prefix) {
-  require(httr, quietly = TRUE)
-  suppressPackageStartupMessages(require(curl, quietly = TRUE))
   tryCatch({
     if (interactive() && !has_internet()) {
       response <- NULL
@@ -243,7 +251,6 @@ save_eu_covid_rds <- function(dir, data, prefix, url) {
 
 
 underscore_compd_names <- function(str) {
-  require(magrittr, quietly = TRUE)
   str %>%
     {
       if (grepl('\\,', .)) {
@@ -278,8 +285,8 @@ underscore_compd_names <- function(str) {
 
 
 create_ggplot <- function(covdata, loc, var, plottype) {
-  invisible(lapply(c('magrittr', 'ggplot2', 'rlang'),
-                   require, character.only = TRUE, quietly = TRUE))
+  # invisible(lapply(c('magrittr', 'ggplot2', 'rlang'), function(p) {
+  #                  require(p, character.only = TRUE, quietly = TRUE)}))
   df <- select_countrydata(covdata, loc)
   if (is.null(df))
     return()
@@ -358,7 +365,6 @@ set_annotations <- function(covobj, variable, country) {
   stopifnot(inherits(covobj, "COVIDdata"),
             is.character(country),
             is.character(variable))
-  require(magrittr)
   df <- select_countrydata(covobj, country)
   
   varchoice <- variable %>% 
@@ -432,7 +438,6 @@ make_cum <- function(x) {
 
 # Creates an informational panel
 my_infobox_panel <- function() {
-  require(shiny)
   inputPanel(
     span(
       "This is a minimalist application created add some utility to",
