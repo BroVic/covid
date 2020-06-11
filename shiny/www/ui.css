@@ -1,0 +1,12 @@
+body {
+  background-color:gray;
+}
+
+.infobox {
+  font-size: 80%;
+  color:red;
+}
+
+#closing-link {
+  text-align: right;
+}

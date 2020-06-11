@@ -1,15 +1,16 @@
 library(shiny)
+library(magrittr)
 source('globals.R')
 
 shinyServer(function(input, output, session) {
-  covid <- decide_and_execute_data_sourcing(dirs$.cache, prefix, today)
-  msg <- ""
+  covid <- source_data(dirs$.cache, prefix)  
+  covid$data %<>%     # compound assignment
+    transformData
+  msg <- character()
   
   observe({
-    varChc <- input$variable
-    numCntry <- length(input$country)
-    if (varChc == 'both') {
-      ind <- if (numCntry >= 2L) 2L else 1L
+    if (length(input$variable) == 2L) {
+      ind <- if (length(input$country) >= 2L) 2L else 1L
       updateSelectInput(
         session,
         cntryInputId,
@@ -25,12 +26,20 @@ shinyServer(function(input, output, session) {
 
   output$myplot <-
     renderPlot({
-      if (length(input$country) >= 10L) {
+      cnt <- input$country
+      if (!is.character(cnt))
+        return()
+      if (length(cnt) >= 10L) {
         plot(1:10, type = 'n', axes = FALSE, xlab = '', ylab = '')
         text(5, 5, "This palette does not support more than 9 different colours")
       }
-      else
-        create_ggplot(covid, input$country, input$variable)
+      else {
+        vartyp <- input$variable
+        plotyp <- input$plotType
+        if (plotyp == 'cumplot')
+          vartyp <- make_cum(vartyp)
+        create_ggplot(covid, cnt, vartyp, plotyp)
+      }
     })
   
   output$message <- renderText(msg)

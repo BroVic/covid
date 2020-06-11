@@ -9,7 +9,6 @@ library(tools)
 # -----------------------------
 nm <- c(".cache", "www", "fig")
 dirs <- structure(as.list(nm), names = nm)
-today <- Sys.Date()
 prefix <- "covid_data_"
 
 # Inputs
@@ -17,13 +16,10 @@ cntryInputId <- 'country'
 varInputId <- 'variable'
 cntryInputLabel <- toTitleCase(cntryInputId)
 varInputLabel <- toTitleCase(varInputId)
-# selectorLabel <- sprintf("%s (one or more):", cntryInputLabel)
 
 
 ## Functions
 # -----------------------------
-
-
 # Checks for missing packages and installs them if necessary
 # Then it attaches them to the search path
 attach_packages <- function() {
@@ -53,11 +49,11 @@ attach_packages <- function() {
 # Current data are collected and if not available, downloaded from source.
 # If unable to access source, old data on disk are used. If all fails,
 # execution is stopped entirely.
-decide_and_execute_data_sourcing <- function(dir, pref, day) {
+source_data <- function(dir, pref) {
     fetch <- TRUE
     if (dataOnDisk(dir, pref)) {
       obj <- readCovidObj(dir, pref)
-      if (obj$meta$created == day)
+      if (obj$meta$created == Sys.Date())
         fetch <- FALSE
     }
     
@@ -250,50 +246,48 @@ underscore_compd_names <- function(str) {
 
 
 
-create_ggplot <- function(covdata, loc, var) {
-  require(magrittr, quietly = TRUE)
-  require(ggplot2, quietly = TRUE)
-  theme_set(theme_minimal())
-  df <- covdata$data %>% 
-    transformData(loc)
+create_ggplot <- function(covdata, loc, var, plottype) {
+  invisible(lapply(c('magrittr', 'ggplot2', 'rlang'),
+                   require, character.only = TRUE, quietly = TRUE))
+  df <- select_countrydata(covdata, loc)
   if (is.null(df))
     return()
-  title <-
-    paste("COVID-19 Trend for", countryTitle(loc))
-  latest <- with(df, max(date))
-  subtitle <- paste("Updated", format(latest, "%A, %d %B %Y"))
-  caption <- covdata$meta$source %>%
-    httr::parse_url() %>%
-    `[[`("hostname") %>%
-    paste("Source:", .)
-  
+ 
   szline <- 1.1
   center <- 0.5
   bold <- "bold"
-  # browser()
-  
+  opts <- c('cases', 'deaths')
   
   gg <- ggplot(df, aes(x = date))
+  if (plottype == 'tsplot') {
+    var1 <- expr(cases)
+    var2 <- expr(deaths)
+    opts.lab <- opts
+  }
+  else if (plottype == 'cumplot') {
+    var1 <- expr(cum.cases)
+    var2 <- expr(cum.deaths)
+    opts.lab <- make_cum(opts)
+  }
   
-  opts <- c('cases', 'deaths')
-  if (var == 'both') {
+  if (length(var) == 2L) {
     gg <- gg +
-      geom_line(aes(y = cases, color = opts[[1]]), size = szline) +
-      geom_line(aes(y = deaths, color = opts[[2]]), size = szline) +
-      scale_color_brewer(labels = opts, palette = 'Set1')
+      geom_line(aes(y = !!var1, color = opts.lab[[1]]), size = szline) +
+      geom_line(aes(y = !!var2, color = opts.lab[[2]]), size = szline) +
+      scale_color_brewer(labels = opts.lab, palette = 'Set1')
   }
   else {
-    opts <- var
     gg <- gg +
       geom_line(aes_string(y = var, color = 'Country'), size = szline) +
       scale_color_brewer(cntryInputLabel, palette = 'Set1')
   }
- 
+  
+  annot <- set_annotations(covdata, loc)
   gg +
-    labs(title = title,
-         subtitle = subtitle,
-         caption = caption) +
-    ylab(sprintf("No. of %s", paste0(toTitleCase(opts), collapse = "/"))) +
+    labs(title = annot$title,
+         subtitle = annot$subtitle,
+         caption = annot$caption) +
+    ylab(sprintf("No. of %s", paste0(toTitleCase(opts.lab), collapse = "/"))) +
     theme(
       plot.title = element_text(hjust = center, face = bold),
       plot.subtitle = element_text(hjust = center),
@@ -313,15 +307,55 @@ create_ggplot <- function(covdata, loc, var) {
 
 
 
+# Filter the data and returns a data frame with only selected countries' data
+select_countrydata <- function(covobj, country) {
+  stopifnot(inherits(covobj, "COVIDdata"), is.character(country))
+  dplyr::filter(covobj$data, Country == country)
+}
+
+
+
+
+
+
+
+
+set_annotations <- function(covobj, country) {
+  stopifnot(inherits(covobj, "COVIDdata"), is.character(country))
+  require(magrittr)
+  df <- select_countrydata(covobj, country)
+  title <-
+    paste("COVID-19 Trend for", countryTitle(country))
+  latest <- with(df, max(date))
+  subtitle <- paste("Updated", format(latest, "%A, %d %B %Y"))
+  caption <- covobj$meta$source %>%
+    httr::parse_url() %>%
+    `[[`("hostname") %>%
+    paste("Source:", .)
+  list(title = title, subtitle = subtitle, caption = caption)
+}
+
+
+
+
+
+
+
+
 # Transforms the data a bit to ease dealing with dates and 
-# focuses on the chosen country or countries
-transformData <- function(data, country) {
+# focuses on the chosen country or countries. The following
+# additional columns are created:
+#  - cum.cases: The cumuluative sum of cases
+#  - cum.deaths: The cumulative sum of deaths
+#  - date: The date in the POSIX format i.e. YYYY-MM-DD
+#
+# The following column is renamed:
+#  - countriesAndTerritories => Country
+#
+transformData <- function(data) {
   suppressPackageStartupMessages(require(dplyr, quietly = TRUE))
-  if (!is.character(country))
-    return()
   suppressWarnings({
-    data %>%
-      filter(countriesAndTerritories == country) %>% 
+    data %>% 
       mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
       arrange(date) %>% 
       mutate(cum.cases = cumsum(cases)) %>% 
@@ -342,8 +376,7 @@ transformData <- function(data, country) {
 # Provides the names to be used for selecting input
 get_country_names <- function(obj) {
   stopifnot(inherits(obj, "COVIDdata"))
-  data <- obj$data
-  cntry.names <- unique(data$countriesAndTerritories)
+  cntry.names <- unique(obj$data$Country)
   names(cntry.names) <- chartr('_', " ", cntry.names)
   cntry.names
 }
@@ -356,4 +389,53 @@ get_country_names <- function(obj) {
 
 draw_summary_table <- function(covidObj, location, var) {
   
+}
+
+
+
+
+
+
+
+# Prefixes a character vector with 'cum.'
+make_cum <- function(x) {
+  stopifnot(is.character(x))
+  paste0('cum.', x)
+}
+
+
+
+
+# Creates an informational panel
+my_infobox_panel <- function() {
+  require(shiny)
+  inputPanel(
+    span(
+      "This is a minimalist application created add some utility to",
+      
+      a('this script',
+        href = "https://gist.github.com/BroVic/32eca9d3ae3334bfe573e4aecb35c522",
+        target = '_blank'),
+      ", which contains the initial work carried out to examine global COVID-19 cases and/or deaths",
+      .noWS = "outside"
+    ),
+    
+    span(
+      "If you would like us to add a feature or you find a bug, kindly post a message ",
+      a('here',
+        href = 'https://github.com/BroVic/covid/issues/new',
+        target = "_blank")
+    ),
+    
+    span("For the source code, visit",
+         strong(
+           a("this page",
+             href = 'https://github.com/BroVic/covid/tree/master/shiny',
+             target = "_blank")
+         )),
+    
+    br(),
+    
+    span(actionLink("closeFdbk", "Close"), id = "closing-link")
+  )
 }
