@@ -31,7 +31,7 @@ local({
     titlePanel("", windowTitle = "COVID-19 Data Visualizer"),
     
     conditionalPanel(
-      sprintf("input.%s != ''", cntryInputId),
+      js_expr_nocountry(),
       mainPanel(plotOutput("myplot"), width = wd$full)
     ),
     
@@ -45,41 +45,54 @@ local({
                  selected = NULL,
                  multiple = TRUE
                )
-             )),
+             )
+      ),
       
       column(width = wd$mid,
-             inputPanel(
-               checkboxGroupInput(
-                 varInputId,
-                 varInputLabel,
-                 c("Cases" = cases, "Deaths" = deaths),
-                 selected = cases
+             conditionalPanel(
+               js_expr_nocountry(),
+               inputPanel(
+                 checkboxGroupInput(
+                   varInputId,
+                   varInputLabel,
+                   c("Cases" = cases, "Deaths" = deaths),
+                   selected = cases
+                 )
                )
-             )),
+             )
+      ),
       
       column(width = wd$right,
-             inputPanel(
-               radioButtons(
-                 "plotType",
-                 "Type of Chart",
-                 c(
-                   "Time-Series" = 'tsplot',
-                   "Cumulative" = "cumplot"
-                 ),
-                 selected = 'tsplot'
+             conditionalPanel(
+               js_expr_nocountry(),
+               inputPanel(
+                 radioButtons(
+                   "plotType",
+                   "Type of Chart",
+                   c(
+                     "Time-Series" = 'tsplot',
+                     "Cumulative" = "cumplot"
+                   ),
+                   selected = 'tsplot'
+                 )
                )
-             ))
+             )
+      )
+      
     ),
     
     br(),
     
     fluidRow(column(
       width = wd$left,
-      span(
+      div(
+        appversion,
+        br(),
         a("Feedback",
           href = "https://github.com/BroVic/covid/issues",
-          target = "_blank"),
-        id = "link_github"
+          target = "_blank",
+          id = "fdbk-link"),
+        id = "endpt"
       )
     ))
   )

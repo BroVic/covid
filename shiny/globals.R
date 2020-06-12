@@ -13,7 +13,7 @@ library(httr)
 library(curl)
 library(shiny)
 
-
+appversion <- "v. 2.1.0"
 ## Important vectors
 # -----------------------------
 nm <- c(".cache", "www", "fig")
@@ -434,7 +434,9 @@ make_cum <- function(x) {
 }
 
 
-
+## --------------------------------------------------
+## UI Functions
+## --------------------------------------------------
 
 # Creates an informational panel
 my_infobox_panel <- function() {
@@ -467,4 +469,16 @@ my_infobox_panel <- function() {
     
     span(actionLink("closeFdbk", "Close"), id = "closing-link")
   )
+}
+
+
+
+
+
+
+
+
+# Runs a JavaScript expression for controllling some conditional panels
+js_expr_nocountry <- function() {
+  sprintf("input.%s != ''", cntryInputId)
 }

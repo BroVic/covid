@@ -4,11 +4,16 @@
 **/
 
 body {
-  background-color:#006666;
+  background-color:#999966;
 }
 
 
-a {
+#fdbk-link {
   color:#FFFFFF;
   font-weight:bold;
+}
+
+#endpt {
+  color:#FFFFFF;
+  font-style:italic;
 }
