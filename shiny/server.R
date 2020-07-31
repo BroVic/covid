@@ -3,6 +3,7 @@
 
 library(shiny)
 library(magrittr)
+
 source('globals.R')
 
 shinyServer(function(input, output, session) {

@@ -1,0 +1,22 @@
+/* Source file: ui.css
+ * -----------------------------
+**/
+
+body {
+  background-color: #999966;
+}
+
+
+#fdbk-link {
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+#endpt {
+  color: #FFFFFF;
+  font-style: italic;
+}
+
+#mainarea {
+  padding: 5px;
+}
