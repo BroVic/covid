@@ -10,11 +10,7 @@ local({
   obj <- readCovidObj(dirs$.cache)
   obj$data <- transformData(obj$data)
   countries <- get_country_names(obj)
-  
-  nn <- colnames(obj$data)
-  vars <- structure(as.list(nn), names = nn)
-  cases <- vars$cases
-  deaths <- vars$deaths
+  vars <- getvariables(obj$data)
   
   # Dimensions
   wd <- list(
@@ -52,11 +48,23 @@ local({
              conditionalPanel(
                js_expr_nocountry(),
                inputPanel(
-                 checkboxGroupInput(
-                   varInputId,
-                   varInputLabel,
-                   c("Cases" = cases, "Deaths" = deaths),
-                   selected = cases
+                 conditionalPanel(
+                   'input.country["length"] == 1',
+                   checkboxGroupInput(
+                     varInputIdCheck,
+                     varInputLabel,
+                     c("Cases" = vars$cases, "Deaths" = vars$deaths),
+                     selected = c(vars$cases, vars$deaths)
+                   )
+                 ),
+                 conditionalPanel(
+                   'input.country["length"] > 1',
+                   radioButtons(
+                     varInputIdRadio,
+                     varInputLabel,
+                     c("Cases" = vars$cases, "Deaths" = vars$deaths),
+                     selected = vars$cases
+                   )
                  )
                )
              )

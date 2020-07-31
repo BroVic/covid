@@ -13,7 +13,8 @@ library(httr)
 library(curl)
 library(shiny)
 
-appversion <- "v. 2.1.0"
+appversion <- "v. 2.1.0.9000"
+
 ## Important vectors
 # -----------------------------
 nm <- c(".cache", "www", "fig")
@@ -22,13 +23,33 @@ prefix <- "covid_data_"
 
 # Inputs
 cntryInputId <- 'country'
-varInputId <- 'variable'
 cntryInputLabel <- toTitleCase(cntryInputId)
+varInputId <- 'variable'
 varInputLabel <- toTitleCase(varInputId)
-
+varInputIdCheck <- paste0(varInputId, '.check')
+varInputIdRadio <- paste0(varInputId, '.radio')
 
 ## Functions
 # -----------------------------
+# Gets the list of variables i.e. the colum names of the table
+# containing the data being visualized
+getvariables <- function(df) {
+  stopifnot(is.data.frame(df))
+  nn <- colnames(df)
+  setNames(as.list(nn), nn)
+}
+
+
+
+
+
+
+
+
+
+
+
+
 # Checks for missing packages and installs them if necessary
 # Then it attaches them to the search path
 attach_packages <- function() {
@@ -285,9 +306,8 @@ underscore_compd_names <- function(str) {
 
 
 create_ggplot <- function(covdata, loc, var, plottype) {
-  # invisible(lapply(c('magrittr', 'ggplot2', 'rlang'), function(p) {
-  #                  require(p, character.only = TRUE, quietly = TRUE)}))
   df <- select_countrydata(covdata, loc)
+  
   if (is.null(df))
     return()
  
