@@ -1,5 +1,4 @@
 # Source file: globals.R
-# App version: 2.0.1
 # -----------------------------
 # 
 # NB: Some of the functions defined here are not called
@@ -13,7 +12,7 @@ library(httr)
 library(curl)
 library(shiny)
 
-appversion <- "v. 2.1.0.9000"
+appversion <- "v. 2.1.0.9001"
 
 ## Important vectors
 # -----------------------------

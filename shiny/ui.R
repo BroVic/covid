@@ -1,5 +1,4 @@
 # Source file: ui.R
-# App version: 2.0.1
 # -----------------------------
 
 library(shiny)
@@ -34,12 +33,14 @@ local({
     fluidRow(
       column(width = wd$left,
              inputPanel(
-               selectInput(
+               selectizeInput(
                  cntryInputId,
-                 cntryInputLabel,
+                 label = cntryInputLabel,
                  choices = c("Select one or more." = "", countries),
                  selected = NULL,
-                 multiple = TRUE
+                 multiple = TRUE,
+                 options = list(closeAfterSelect = I('true'),
+                                selectOnTab = I('true'))
                )
              )
       ),
