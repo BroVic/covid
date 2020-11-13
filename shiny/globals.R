@@ -12,7 +12,7 @@ library(httr)
 library(curl)
 library(shiny)
 
-appversion <- "v2.1.0.9002"
+appversion <- "v2.1.1"
 
 ## Important vectors
 # -----------------------------
