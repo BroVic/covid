@@ -1,6 +1,6 @@
 # covid
 
-_v. 2.1.0_
+_v. 2.1.1_
 
 This repository houses code for downloading and displaying data on COVID-19. 
 
