@@ -27,7 +27,7 @@ local({
   
   ui <- fluidPage(
     
-    includeCSS("www/ui.css"),
+    includeCSS("www/styles.css"),
     
     titlePanel(title, windowTitle = title),
     
