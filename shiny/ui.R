@@ -35,7 +35,9 @@ local({
       
       div(
         conditionalPanel(
+          
           js_expr_nocountry(),
+          
           div(
             mainPanel(
               plotOutput("myplot"),
@@ -84,8 +86,8 @@ local({
                     checkboxGroupInput(
                       varInputIdCheck,
                       varInputLabel,
-                      c("Cases" = vars$cases, "Deaths" = vars$deaths),
-                      selected = c(vars$cases, vars$deaths)
+                      c("Cases" = vars$cases_weekly, "Deaths" = vars$deaths_weekly),
+                      selected = c(vars$cases_weekly, vars$deaths_weekly)
                     )
                   ),
                   conditionalPanel(
@@ -93,8 +95,8 @@ local({
                     radioButtons(
                       varInputIdRadio,
                       varInputLabel,
-                      c("Cases" = vars$cases, "Deaths" = vars$deaths),
-                      selected = vars$cases
+                      c("Cases" = vars$cases_weekly, "Deaths" = vars$deaths_weekly),
+                      selected = vars$cases_weekly
                     )
                   )
                 ),

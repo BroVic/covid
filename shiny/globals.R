@@ -12,7 +12,7 @@ library(httr)
 library(curl)
 library(shiny)
 
-appversion <- "v2.1.1"
+appversion <- "v2.1.2"
 
 ## Important vectors
 # -----------------------------
@@ -115,11 +115,12 @@ transformData <- function(data) {
   suppressWarnings({
     data %>% 
       rename(Country = countriesAndTerritories) %>% 
+	  filter(cases_weekly >= 0 | deaths_weekly >= 0) %>%
       mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
       arrange(date) %>% 
       group_by(Country) %>% 
-      mutate(cum.cases = cumsum(cases)) %>% 
-      mutate(cum.deaths = cumsum(deaths)) 
+      mutate(cum.cases = cumsum(cases_weekly)) %>% 
+      mutate(cum.deaths = cumsum(deaths_weekly)) 
   })
 }
 
@@ -317,8 +318,8 @@ create_ggplot <- function(covdata, loc, var, plottype) {
   
   gg <- ggplot(df, aes(x = date))
   if (plottype == 'tsplot') {
-    var1 <- expr(cases)
-    var2 <- expr(deaths)
+    var1 <- expr(cases_weekly)
+    var2 <- expr(deaths_weekly)
     opts.lab <- opts
   }
   else if (plottype == 'cumplot') {
